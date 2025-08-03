@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mood Recipe Finder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-br from-purple-100 to-pink-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex items-center space-x-4">
+                    <span id="userInfo" class="text-gray-600"></span>
+                </div>
+                <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition duration-300 flex items-center">
+                    <i class="fas fa-sign-out-alt mr-2"></i>
+                    Logout
+                </button>
+            </div>
+            <h1 class="text-5xl font-bold text-gray-800 mb-4">
+                <i class="fas fa-heart text-pink-500 mr-3"></i>
+                Mood Recipe Finder
+            </h1>
+            <p class="text-xl text-gray-600">Tell us how you're feeling and we'll find the perfect recipe for you!</p>
+        </div>
+
+        <!-- Mood Selection -->
+        <div id="moodSelection" class="max-w-4xl mx-auto mb-12">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center">How are you feeling today?</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <button class="mood-btn bg-blue-500 hover:bg-blue-600" data-mood="happy">
+                    <i class="fas fa-smile text-2xl mb-2"></i>
+                    <span>Happy</span>
+                </button>
+                <button class="mood-btn bg-gray-500 hover:bg-gray-600" data-mood="sad">
+                    <i class="fas fa-sad-tear text-2xl mb-2"></i>
+                    <span>Sad</span>
+                </button>
+                <button class="mood-btn bg-red-500 hover:bg-red-600" data-mood="excited">
+                    <i class="fas fa-fire text-2xl mb-2"></i>
+                    <span>Excited</span>
+                </button>
+                <button class="mood-btn bg-yellow-500 hover:bg-yellow-600" data-mood="anxious">
+                    <i class="fas fa-wind text-2xl mb-2"></i>
+                    <span>Anxious</span>
+                </button>
+                <button class="mood-btn bg-green-500 hover:bg-green-600" data-mood="refreshed">
+                    <i class="fas fa-leaf text-2xl mb-2"></i>
+                    <span>Refreshed</span>
+                </button>
+                <button class="mood-btn bg-purple-500 hover:bg-purple-600" data-mood="romantic">
+                    <i class="fas fa-heart text-2xl mb-2"></i>
+                    <span>Romantic</span>
+                </button>
+                <button class="mood-btn bg-orange-500 hover:bg-orange-600" data-mood="adventurous">
+                    <i class="fas fa-compass text-2xl mb-2"></i>
+                    <span>Adventurous</span>
+                </button>
+                <button class="mood-btn bg-teal-500 hover:bg-teal-600" data-mood="sick">
+                    <i class="fas fa-thermometer-half text-2xl mb-2"></i>
+                    <span>Sick</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading" class="hidden max-w-2xl mx-auto text-center">
+            <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-pink-500 mx-auto mb-4"></div>
+            <p class="text-gray-600 text-lg">Finding the perfect recipe for your mood...</p>
+        </div>
+
+        <!-- Recipe Display -->
+        <div id="recipeDisplay" class="hidden max-w-4xl mx-auto">
+            <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
+                <div class="flex justify-between items-start mb-6">
+                    <h2 id="recipeName" class="text-3xl font-bold text-gray-800"></h2>
+                    <div class="flex gap-2">
+                        <span id="recipeDifficulty" class="px-3 py-1 rounded-full text-sm font-medium"></span>
+                        <span id="recipeTime" class="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"></span>
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-8">
+                    <!-- Ingredients -->
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                            <i class="fas fa-list-ul text-pink-500 mr-2"></i>
+                            Ingredients
+                        </h3>
+                        <ul id="ingredientsList" class="space-y-2 text-gray-700"></ul>
+                    </div>
+
+                    <!-- Instructions -->
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                            <i class="fas fa-utensils text-pink-500 mr-2"></i>
+                            Instructions
+                        </h3>
+                        <div id="instructionsText" class="text-gray-700 leading-relaxed"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex justify-center gap-4">
+                <button id="newRecipeBtn" class="bg-pink-500 hover:bg-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-300 flex items-center">
+                    <i class="fas fa-random mr-2"></i>
+                    Get Another Recipe
+                </button>
+                <button id="backToMoodBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-300 flex items-center">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Choose Different Mood
+                </button>
+            </div>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorDisplay" class="hidden max-w-2xl mx-auto text-center">
+            <div class="bg-red-50 border border-red-200 rounded-lg p-6">
+                <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>
+                <h3 class="text-xl font-semibold text-red-800 mb-2">Oops! Something went wrong</h3>
+                <p id="errorMessage" class="text-red-600 mb-4"></p>
+                <button id="retryBtn" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300">
+                    Try Again
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
