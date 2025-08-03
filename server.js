@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const bcrypt = require('bcrypt');
 const session = require('express-session');
+const SQLiteStore = require('connect-sqlite3')(session);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -19,6 +20,10 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'mood-recipe-secret-key-2024',
   resave: false,
   saveUninitialized: false,
+  store: new SQLiteStore({
+    db: 'sessions.db',
+    dir: './'
+  }),
   cookie: { 
     secure: NODE_ENV === 'production', // Set to true in production with HTTPS
     maxAge: 24 * 60 * 60 * 1000 // 24 hours

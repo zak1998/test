@@ -51,6 +51,7 @@ jspm_packages/
 *.db
 *.sqlite
 *.sqlite3
+sessions.db
 
 # Logs
 logs
