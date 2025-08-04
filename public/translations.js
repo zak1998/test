@@ -89,15 +89,7 @@ const translations = {
             minutes: "minutes",
             easy: "Facile",
             medium: "Moyen",
-            hard: "Difficile",
-            step: "Étape",
-            servings: "Portions",
-            cuisine: "Cuisine",
-            category: "Catégorie",
-            cookTime: "Temps de cuisson",
-            totalTime: "Temps total",
-            rating: "Note",
-            reviews: "Avis"
+            hard: "Difficile"
         },
         // Language switcher
         language: {
@@ -196,15 +188,7 @@ const translations = {
             minutes: "minutes",
             easy: "Easy",
             medium: "Medium",
-            hard: "Hard",
-            step: "Step",
-            servings: "Servings",
-            cuisine: "Cuisine",
-            category: "Category",
-            cookTime: "Cook time",
-            totalTime: "Total time",
-            rating: "Rating",
-            reviews: "Reviews"
+            hard: "Hard"
         },
         // Language switcher
         language: {

@@ -7,25 +7,10 @@ const session = require('express-session');
 const SQLiteStore = require('connect-sqlite3')(session);
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const axios = require('axios');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
-
-// BigOven API configuration
-const BIGOVEN_API_KEY = process.env.BIGOVEN_API_KEY || 'your-api-key-here';
-const BIGOVEN_BASE_URL = 'https://api2.bigoven.com';
-
-// Mood to recipe search terms mapping
-const moodToSearchTerms = {
-  'happy': ['cheerful', 'colorful', 'fresh', 'vibrant', 'energizing'],
-  'sad': ['comfort', 'warm', 'cozy', 'healing', 'nourishing'],
-  'excited': ['spicy', 'bold', 'adventurous', 'exciting', 'dynamic'],
-  'stressed': ['calming', 'soothing', 'relaxing', 'gentle', 'peaceful'],
-  'tired': ['energizing', 'invigorating', 'refreshing', 'vitalizing', 'stimulating'],
-  'sick': ['healing', 'nourishing', 'gentle', 'soothing', 'remedy']
-};
 
 // Trust proxy for rate limiting (needed for Render)
 app.set('trust proxy', 1);
@@ -604,76 +589,22 @@ app.get('/api/user', (req, res) => {
 });
 
 // API Routes (protected)
-app.get('/api/recipes/:mood', requireAuth, async (req, res) => {
+app.get('/api/recipes/:mood', requireAuth, (req, res) => {
   const mood = req.params.mood;
   
-  // Check if BigOven API key is configured
-  if (!BIGOVEN_API_KEY || BIGOVEN_API_KEY === 'your-api-key-here') {
-    // Fallback to local database
-    db.all("SELECT * FROM recipes WHERE mood = ? ORDER BY RANDOM() LIMIT 1", [mood], (err, rows) => {
-      if (err) {
-        res.status(500).json({ error: err.message });
-        return;
-      }
-      
-      if (rows.length === 0) {
-        res.status(404).json({ error: 'No recipes found for this mood' });
-        return;
-      }
-      
-      res.json(rows[0]);
-    });
-    return;
-  }
-  
-  const searchTerms = moodToSearchTerms[mood] || [mood]; // Fallback to mood if no specific terms
-  const searchQuery = searchTerms.map(term => `"${term}"`).join(' OR ');
-
-  try {
-    const response = await axios.get(`${BIGOVEN_BASE_URL}/recipes/search?api_key=${BIGOVEN_API_KEY}&q=${searchQuery}`);
-    const recipes = response.data.results;
-
-    if (recipes.length === 0) {
-      return res.status(404).json({ error: 'No recipes found for this mood' });
+  db.all("SELECT * FROM recipes WHERE mood = ? ORDER BY RANDOM() LIMIT 1", [mood], (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
     }
-
-    // Select a random recipe from the results
-    const randomIndex = Math.floor(Math.random() * recipes.length);
-    const recipe = recipes[randomIndex];
-
-    // Fetch detailed recipe information
-    const detailedResponse = await axios.get(`${BIGOVEN_BASE_URL}/recipes/${recipe.recipe_id}?api_key=${BIGOVEN_API_KEY}`);
-    const detailedRecipe = detailedResponse.data;
-
-    // Map BigOven data to our recipe format
-    const mappedRecipe = {
-      id: detailedRecipe.recipe_id,
-      name: detailedRecipe.name,
-      ingredients: detailedRecipe.ingredients.map(ing => ing.name).join(', '),
-      instructions: detailedRecipe.instructions.map(step => step.step).join('\n'),
-      mood: mood,
-      prep_time: detailedRecipe.prep_time,
-      difficulty: detailedRecipe.difficulty
-    };
-
-    res.json(mappedRecipe);
-  } catch (error) {
-    console.error('Error fetching recipe from BigOven:', error.message);
-    // Fallback to local database on API error
-    db.all("SELECT * FROM recipes WHERE mood = ? ORDER BY RANDOM() LIMIT 1", [mood], (err, rows) => {
-      if (err) {
-        res.status(500).json({ error: err.message });
-        return;
-      }
-      
-      if (rows.length === 0) {
-        res.status(404).json({ error: 'No recipes found for this mood' });
-        return;
-      }
-      
-      res.json(rows[0]);
-    });
-  }
+    
+    if (rows.length === 0) {
+      res.status(404).json({ error: 'No recipes found for this mood' });
+      return;
+    }
+    
+    res.json(rows[0]);
+  });
 });
 
 app.get('/api/moods', requireAuth, (req, res) => {
@@ -688,145 +619,7 @@ app.get('/api/moods', requireAuth, (req, res) => {
   });
 });
 
-// New route for detailed recipe with translations
-app.get('/api/recipe/:id/detailed', requireAuth, async (req, res) => {
-  const recipeId = req.params.id;
-  const language = req.query.lang || 'en'; // Default to English
-  
-  // Check if BigOven API key is configured
-  if (!BIGOVEN_API_KEY || BIGOVEN_API_KEY === 'your-api-key-here') {
-    // Fallback to local database
-    db.get("SELECT * FROM recipes WHERE id = ?", [recipeId], (err, row) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      
-      if (!row) {
-        return res.status(404).json({ error: 'Recipe not found' });
-      }
-      
-      // Convert local recipe to detailed format
-      const detailedRecipe = {
-        id: row.id,
-        name: {
-          en: row.name,
-          fr: row.name // For now, use same name for both languages
-        },
-        ingredients: row.ingredients.split(', ').map(ingredient => ({
-          name: {
-            en: ingredient.trim(),
-            fr: ingredient.trim() // For now, use same name for both languages
-          },
-          amount: '',
-          unit: ''
-        })),
-        instructions: row.instructions.split('\n').map((instruction, index) => ({
-          step: index + 1,
-          instruction: {
-            en: instruction.trim(),
-            fr: instruction.trim() // For now, use same name for both languages
-          }
-        })),
-        prep_time: row.prep_time,
-        cook_time: 0,
-        total_time: row.prep_time,
-        difficulty: row.difficulty,
-        servings: 4,
-        cuisine: 'International',
-        category: 'Main Dish'
-      };
-      
-      res.json(detailedRecipe);
-    });
-    return;
-  }
-  
-  try {
-    const response = await axios.get(`${BIGOVEN_BASE_URL}/recipes/${recipeId}?api_key=${BIGOVEN_API_KEY}`);
-    const recipe = response.data;
-    
-    // Create detailed recipe object with translations
-    const detailedRecipe = {
-      id: recipe.recipe_id,
-      name: {
-        en: recipe.name,
-        fr: recipe.name // We'll need to implement translation logic
-      },
-      ingredients: recipe.ingredients.map(ingredient => ({
-        name: {
-          en: ingredient.name,
-          fr: ingredient.name // We'll need to implement translation logic
-        },
-        amount: ingredient.amount,
-        unit: ingredient.unit
-      })),
-      instructions: recipe.instructions.map((instruction, index) => ({
-        step: index + 1,
-        instruction: {
-          en: instruction.step,
-          fr: instruction.step // We'll need to implement translation logic
-        }
-      })),
-      prep_time: recipe.prep_time,
-      cook_time: recipe.cook_time,
-      total_time: recipe.prep_time + recipe.cook_time,
-      difficulty: recipe.difficulty,
-      servings: recipe.servings,
-      cuisine: recipe.cuisine,
-      category: recipe.category,
-      image_url: recipe.image_url,
-      rating: recipe.rating,
-      review_count: recipe.review_count
-    };
-    
-    res.json(detailedRecipe);
-  } catch (error) {
-    console.error('Error fetching detailed recipe:', error.message);
-    // Fallback to local database on API error
-    db.get("SELECT * FROM recipes WHERE id = ?", [recipeId], (err, row) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      
-      if (!row) {
-        return res.status(404).json({ error: 'Recipe not found' });
-      }
-      
-      // Convert local recipe to detailed format
-      const detailedRecipe = {
-        id: row.id,
-        name: {
-          en: row.name,
-          fr: row.name
-        },
-        ingredients: row.ingredients.split(', ').map(ingredient => ({
-          name: {
-            en: ingredient.trim(),
-            fr: ingredient.trim()
-          },
-          amount: '',
-          unit: ''
-        })),
-        instructions: row.instructions.split('\n').map((instruction, index) => ({
-          step: index + 1,
-          instruction: {
-            en: instruction.trim(),
-            fr: instruction.trim()
-          }
-        })),
-        prep_time: row.prep_time,
-        cook_time: 0,
-        total_time: row.prep_time,
-        difficulty: row.difficulty,
-        servings: 4,
-        cuisine: 'International',
-        category: 'Main Dish'
-      };
-      
-      res.json(detailedRecipe);
-    });
-  }
-});
+
 
 // Page Routes
 app.get('/', (req, res) => {

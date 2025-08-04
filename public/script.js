@@ -117,9 +117,7 @@ async function getRecipe(mood) {
         
         const recipe = await response.json();
         currentRecipe = recipe;
-        
-        // Fetch detailed recipe information
-        await fetchDetailedRecipe(recipe.id);
+        displayRecipe(recipe);
         
     } catch (error) {
         console.error('Error fetching recipe:', error);
@@ -127,131 +125,7 @@ async function getRecipe(mood) {
     }
 }
 
-// Function to fetch detailed recipe information
-async function fetchDetailedRecipe(recipeId) {
-    try {
-        const currentLang = languageManager.getCurrentLanguage();
-        const response = await fetch(`/api/recipe/${recipeId}/detailed?lang=${currentLang}`);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const detailedRecipe = await response.json();
-        displayDetailedRecipe(detailedRecipe);
-        
-    } catch (error) {
-        console.error('Error fetching detailed recipe:', error);
-        // Fallback to basic recipe display
-        if (currentRecipe) {
-            displayRecipe(currentRecipe);
-        }
-    }
-}
-
-// Function to display detailed recipe with translations
-function displayDetailedRecipe(recipe) {
-    const currentLang = languageManager.getCurrentLanguage();
-    
-    // Set recipe name with translation
-    recipeName.textContent = recipe.name[currentLang] || recipe.name.en || recipe.name;
-    
-    // Set difficulty badge
-    const difficulty = recipe.difficulty || 'medium';
-    recipeDifficulty.textContent = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
-    recipeDifficulty.className = `px-3 py-1 rounded-full text-sm font-medium ${getDifficultyColor(difficulty)}`;
-    
-    // Set total time (prep + cook)
-    const totalTime = (recipe.prep_time || 0) + (recipe.cook_time || 0);
-    recipeTime.textContent = `${totalTime} min`;
-    
-    // Set ingredients with quantities
-    ingredientsList.innerHTML = '';
-    if (recipe.ingredients && Array.isArray(recipe.ingredients)) {
-        recipe.ingredients.forEach(ingredient => {
-            const li = document.createElement('li');
-            li.className = 'flex items-center justify-between mb-2';
-            
-            const ingredientName = ingredient.name[currentLang] || ingredient.name.en || ingredient.name;
-            const amount = ingredient.amount || '';
-            const unit = ingredient.unit || '';
-            
-            li.innerHTML = `
-                <div class="flex items-center">
-                    <i class="fas fa-circle text-pink-500 text-xs mr-2"></i>
-                    <span class="font-medium">${ingredientName}</span>
-                </div>
-                <span class="text-gray-600 text-sm">${amount} ${unit}</span>
-            `;
-            ingredientsList.appendChild(li);
-        });
-    } else {
-        // Fallback for old format
-        const ingredients = recipe.ingredients ? recipe.ingredients.split(', ') : [];
-        ingredients.forEach(ingredient => {
-            const li = document.createElement('li');
-            li.className = 'flex items-center';
-            li.innerHTML = `
-                <i class="fas fa-circle text-pink-500 text-xs mr-2"></i>
-                <span>${ingredient.trim()}</span>
-            `;
-            ingredientsList.appendChild(li);
-        });
-    }
-    
-    // Set detailed instructions
-    instructionsText.innerHTML = '';
-    if (recipe.instructions && Array.isArray(recipe.instructions)) {
-        recipe.instructions.forEach((instruction, index) => {
-            const stepDiv = document.createElement('div');
-            stepDiv.className = 'mb-4';
-            
-            const stepNumber = document.createElement('div');
-            stepNumber.className = 'flex items-center mb-2';
-            stepNumber.innerHTML = `
-                <span class="bg-pink-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mr-3">${instruction.step}</span>
-                <span class="font-semibold text-gray-800">${languageManager.getText('recipe.step')} ${instruction.step}</span>
-            `;
-            
-            const stepText = document.createElement('p');
-            stepText.className = 'text-gray-700 leading-relaxed ml-9';
-            stepText.textContent = instruction.instruction[currentLang] || instruction.instruction.en || instruction.instruction;
-            
-            stepDiv.appendChild(stepNumber);
-            stepDiv.appendChild(stepText);
-            instructionsText.appendChild(stepDiv);
-        });
-    } else {
-        // Fallback for old format
-        const instructions = recipe.instructions ? recipe.instructions.split('\n') : [];
-        instructions.forEach((instruction, index) => {
-            if (instruction.trim()) {
-                const p = document.createElement('p');
-                p.className = 'mb-2';
-                p.textContent = `${index + 1}. ${instruction.trim()}`;
-                instructionsText.appendChild(p);
-            }
-        });
-    }
-    
-    // Add additional recipe information if available
-    if (recipe.servings || recipe.cuisine || recipe.category) {
-        const infoDiv = document.createElement('div');
-        infoDiv.className = 'mt-6 pt-4 border-t border-gray-200';
-        infoDiv.innerHTML = `
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                ${recipe.servings ? `<div><i class="fas fa-users mr-2"></i>${languageManager.getText('recipe.servings')}: ${recipe.servings}</div>` : ''}
-                ${recipe.cuisine ? `<div><i class="fas fa-globe mr-2"></i>${languageManager.getText('recipe.cuisine')}: ${recipe.cuisine}</div>` : ''}
-                ${recipe.category ? `<div><i class="fas fa-tag mr-2"></i>${languageManager.getText('recipe.category')}: ${recipe.category}</div>` : ''}
-            </div>
-        `;
-        instructionsText.appendChild(infoDiv);
-    }
-    
-    showRecipeDisplay();
-}
-
-// Function to display recipe (fallback for old format)
+// Function to display recipe
 function displayRecipe(recipe) {
     // Set recipe name
     recipeName.textContent = recipe.name;
