@@ -20,7 +20,8 @@ let sessionStore;
 try {
   sessionStore = new SQLiteStore({
     db: 'sessions.db',
-    dir: './'
+    dir: './',
+    table: 'sessions'
   });
   console.log('✅ SQLite session store initialized successfully');
 } catch (error) {
@@ -34,8 +35,10 @@ app.use(session({
   saveUninitialized: false,
   store: sessionStore,
   cookie: { 
-    secure: NODE_ENV === 'production', // Set to true in production with HTTPS
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    secure: false, // Set to false for now to debug
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    httpOnly: true,
+    sameSite: 'lax'
   }
 }));
 
