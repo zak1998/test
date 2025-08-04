@@ -617,8 +617,12 @@ app.get('/api/moods', requireAuth, (req, res) => {
 });
 
 // Page Routes
-app.get('/', isAuthenticated, (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+app.get('/', (req, res) => {
+  if (req.session.userId) {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  } else {
+    res.redirect('/login');
+  }
 });
 
 app.get('/login', isAuthenticated, (req, res) => {
