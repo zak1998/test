@@ -122,9 +122,147 @@
         .fade-in-up {
             animation: fadeInUp 0.6s ease-out;
         }
+        
+        /* Notification System Styles */
+        .notification-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            max-width: 400px;
+        }
+        
+        .notification {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 10px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transform: translateX(100%);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            border-left: 4px solid;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        
+        .notification.success {
+            border-left-color: #10b981;
+            background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+        }
+        
+        .notification.error {
+            border-left-color: #ef4444;
+            background: linear-gradient(135deg, #fef2f2 0%, #fef2f2 100%);
+        }
+        
+        .notification.warning {
+            border-left-color: #f59e0b;
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+        }
+        
+        .notification-icon {
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+        
+        .notification.success .notification-icon {
+            color: #10b981;
+        }
+        
+        .notification.error .notification-icon {
+            color: #ef4444;
+        }
+        
+        .notification.warning .notification-icon {
+            color: #f59e0b;
+        }
+        
+        .notification-content {
+            flex: 1;
+        }
+        
+        .notification-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 2px;
+            color: #1f2937;
+        }
+        
+        .notification.message {
+            font-size: 0.875rem;
+            color: #6b7280;
+            line-height: 1.4;
+        }
+        
+        .notification-close {
+            background: none;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            font-size: 1.1rem;
+        }
+        
+        .notification-close:hover {
+            background: rgba(0, 0, 0, 0.1);
+            color: #6b7280;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 53%, 80%, 100% {
+                transform: translate3d(0, 0, 0);
+            }
+            40%, 43% {
+                transform: translate3d(0, -8px, 0);
+            }
+            70% {
+                transform: translate3d(0, -4px, 0);
+            }
+            90% {
+                transform: translate3d(0, -2px, 0);
+            }
+        }
+        
+        .bounce {
+            animation: bounce 0.6s ease-out;
+        }
     </style>
 </head>
 <body class="gradient-bg min-h-screen flex items-center justify-center p-4">
+    <!-- Notification Container -->
+    <div id="notificationContainer" class="notification-container"></div>
+    
     <!-- Loading Screen -->
     <div id="loadingScreen" class="loading-screen">
         <div class="loading-container fade-in-up">
@@ -276,6 +414,60 @@
     </style>
 
     <script>
+        // Notification system
+        function showNotification(type, title, message, duration = 5000) {
+            const container = document.getElementById('notificationContainer');
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            
+            let icon, iconClass;
+            switch(type) {
+                case 'success':
+                    icon = 'fas fa-check-circle';
+                    break;
+                case 'error':
+                    icon = 'fas fa-exclamation-circle';
+                    break;
+                case 'warning':
+                    icon = 'fas fa-exclamation-triangle';
+                    break;
+                default:
+                    icon = 'fas fa-info-circle';
+            }
+            
+            notification.innerHTML = `
+                <div class="notification-icon">
+                    <i class="${icon}"></i>
+                </div>
+                <div class="notification-content">
+                    <div class="notification-title">${title}</div>
+                    <div class="notification-message">${message}</div>
+                </div>
+                <button class="notification-close" onclick="this.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            container.appendChild(notification);
+            
+            // Trigger animation
+            setTimeout(() => {
+                notification.classList.add('show', 'bounce');
+            }, 100);
+            
+            // Auto remove after duration
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.classList.remove('show');
+                    setTimeout(() => {
+                        if (notification.parentElement) {
+                            notification.remove();
+                        }
+                    }, 400);
+                }
+            }, duration);
+        }
+        
         // Loading screen functionality
         function showLoadingScreen() {
             const loadingScreen = document.getElementById('loadingScreen');
@@ -306,9 +498,9 @@
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             
-            // Simple validation
+            // Validation with animated notifications
             if (!username || !password) {
-                alert('Please fill in all fields');
+                showNotification('warning', 'Champs requis', 'Veuillez remplir tous les champs');
                 return;
             }
             
@@ -325,14 +517,17 @@
 
                 if (response.ok) {
                     console.log('✅ Login successful, showing loading screen...');
-                    showLoadingScreen();
+                    showNotification('success', 'Connexion réussie', 'Redirection vers Mood Recipe Finder...', 2000);
+                    setTimeout(() => {
+                        showLoadingScreen();
+                    }, 1000);
                 } else {
                     console.log('❌ Login failed:', data.error);
-                    alert(data.error || 'Login failed');
+                    showNotification('error', 'Échec de connexion', data.error || 'Identifiants invalides');
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Login failed. Please try again.');
+                showNotification('error', 'Erreur de connexion', 'Veuillez réessayer plus tard');
             }
         });
 
