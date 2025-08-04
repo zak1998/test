@@ -298,15 +298,8 @@ class LanguageManager {
     }
 
     insertLanguageSwitcher(switcher) {
-        // Try to find the best position for the language switcher
-        const header = document.querySelector('.text-center');
-        if (header) {
-            // Insert after the header
-            header.parentNode.insertBefore(switcher, header.nextSibling);
-        } else {
-            // Insert at the top of the body
-            document.body.insertBefore(switcher, document.body.firstChild);
-        }
+        // Always insert at the very top of the body for fixed positioning
+        document.body.insertBefore(switcher, document.body.firstChild);
     }
 
     updateLanguageSwitcher() {
@@ -318,4 +311,8 @@ class LanguageManager {
 const languageManager = new LanguageManager();
 
 // Export for use in other scripts
-window.languageManager = languageManager; 
+window.languageManager = languageManager;
+
+// Debug: log that the language manager was initialized
+console.log('Language manager initialized:', languageManager);
+console.log('Current language:', languageManager.getCurrentLanguage()); 
