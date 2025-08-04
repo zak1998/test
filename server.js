@@ -12,6 +12,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
+// Trust proxy for rate limiting (needed for Render)
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet({
   contentSecurityPolicy: {
@@ -68,9 +71,23 @@ app.use(session({
     secure: NODE_ENV === 'production', // Now properly set based on environment
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     httpOnly: true,
-    sameSite: 'lax'
-  }
+    sameSite: 'lax',
+    domain: NODE_ENV === 'production' ? undefined : undefined // Let browser set domain
+  },
+  name: 'mood-recipe-session' // Custom session name
 }));
+
+// Add session debugging middleware
+app.use((req, res, next) => {
+  console.log('🔍 Request session info:', {
+    sessionId: req.sessionID,
+    userId: req.session.userId,
+    username: req.session.username,
+    url: req.url,
+    method: req.method
+  });
+  next();
+});
 
 // Database setup
 const db = new sqlite3.Database('recipes.db');
