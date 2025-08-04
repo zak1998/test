@@ -292,6 +292,9 @@ class LanguageManager {
 
         // Insert the switcher in the appropriate location
         this.insertLanguageSwitcher(switcher);
+        
+        // Debug: log that the switcher was created
+        console.log('Language switcher created:', switcher);
     }
 
     insertLanguageSwitcher(switcher) {
