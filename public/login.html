@@ -199,9 +199,11 @@
                 const data = await response.json();
 
                 if (response.ok) {
+                    console.log('✅ Login successful, redirecting...');
                     alert('Login successful! Redirecting to Mood Recipe Finder...');
                     window.location.href = '/dashboard';
                 } else {
+                    console.log('❌ Login failed:', data.error);
                     alert(data.error || 'Login failed');
                 }
             } catch (error) {

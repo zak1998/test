@@ -15,15 +15,24 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// Session configuration
+// Session configuration with fallback
+let sessionStore;
+try {
+  sessionStore = new SQLiteStore({
+    db: 'sessions.db',
+    dir: './'
+  });
+  console.log('✅ SQLite session store initialized successfully');
+} catch (error) {
+  console.log('⚠️ SQLite session store failed, using MemoryStore as fallback');
+  sessionStore = undefined;
+}
+
 app.use(session({
   secret: process.env.SESSION_SECRET || 'mood-recipe-secret-key-2024',
   resave: false,
   saveUninitialized: false,
-  store: new SQLiteStore({
-    db: 'sessions.db',
-    dir: './'
-  }),
+  store: sessionStore,
   cookie: { 
     secure: NODE_ENV === 'production', // Set to true in production with HTTPS
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
@@ -365,16 +374,30 @@ db.serialize(() => {
 
 // Authentication middleware
 function requireAuth(req, res, next) {
+  console.log('🔍 requireAuth check:', {
+    sessionId: req.sessionID,
+    userId: req.session.userId,
+    hasSession: !!req.session.userId
+  });
+  
   if (req.session.userId) {
     next();
   } else {
+    console.log('❌ Authentication failed - redirecting to login');
     res.redirect('/login');
   }
 }
 
 // Check if user is authenticated
 function isAuthenticated(req, res, next) {
+  console.log('🔍 isAuthenticated check:', {
+    sessionId: req.sessionID,
+    userId: req.session.userId,
+    hasSession: !!req.session.userId
+  });
+  
   if (req.session.userId) {
+    console.log('✅ User already authenticated - redirecting to dashboard');
     res.redirect('/dashboard');
   } else {
     next();
@@ -459,6 +482,12 @@ app.post('/api/login', async (req, res) => {
       // Set session
       req.session.userId = user.id;
       req.session.username = user.username;
+      
+      console.log('🔐 Session set:', {
+        userId: req.session.userId,
+        username: req.session.username,
+        sessionId: req.sessionID
+      });
 
       res.json({ 
         success: true, 
