@@ -46,7 +46,10 @@ const loginLimiter = rateLimit({
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+// Serve static files except index.html (we'll serve it through protected routes)
+app.use(express.static('public', {
+  index: false // Disable automatic serving of index.html
+}));
 
 // Session configuration with fallback
 let sessionStore;
@@ -635,6 +638,15 @@ app.get('/register', isAuthenticated, (req, res) => {
 
 app.get('/dashboard', requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Block direct access to index.html
+app.get('/index.html', (req, res) => {
+  if (req.session.userId) {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  } else {
+    res.redirect('/login');
+  }
 });
 
 app.listen(PORT, () => {
