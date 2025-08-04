@@ -5,10 +5,40 @@ const path = require('path');
 const bcrypt = require('bcrypt');
 const session = require('express-session');
 const SQLiteStore = require('connect-sqlite3')(session);
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
+
+// Security middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://cdnjs.cloudflare.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com"],
+      fontSrc: ["'self'", "https://cdnjs.cloudflare.com"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+}));
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.'
+});
+app.use(limiter);
+
+// Login rate limiting (stricter)
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // limit each IP to 5 login attempts per windowMs
+  message: 'Too many login attempts, please try again later.'
+});
 
 // Middleware
 app.use(cors());
@@ -35,7 +65,7 @@ app.use(session({
   saveUninitialized: false,
   store: sessionStore,
   cookie: { 
-    secure: false, // Set to false for now to debug
+    secure: NODE_ENV === 'production', // Now properly set based on environment
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     httpOnly: true,
     sameSite: 'lax'
@@ -408,12 +438,16 @@ function isAuthenticated(req, res, next) {
 }
 
 // Authentication Routes
-app.post('/api/register', async (req, res) => {
+app.post('/api/register', loginLimiter, async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
+    // Input sanitization
+    const sanitizedUsername = username ? username.trim().replace(/[<>]/g, '') : '';
+    const sanitizedEmail = email ? email.trim().toLowerCase() : '';
+
     // Validation
-    if (!username || !email || !password) {
+    if (!sanitizedUsername || !sanitizedEmail || !password) {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
@@ -421,8 +455,14 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
 
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(sanitizedEmail)) {
+      return res.status(400).json({ error: 'Please enter a valid email address' });
+    }
+
     // Check if user already exists
-    db.get("SELECT id FROM users WHERE username = ? OR email = ?", [username, email], async (err, row) => {
+    db.get("SELECT id FROM users WHERE username = ? OR email = ?", [sanitizedUsername, sanitizedEmail], async (err, row) => {
       if (err) {
         return res.status(500).json({ error: 'Database error' });
       }
@@ -436,19 +476,19 @@ app.post('/api/register', async (req, res) => {
 
       // Insert new user
       db.run("INSERT INTO users (username, email, password) VALUES (?, ?, ?)", 
-        [username, email, hashedPassword], function(err) {
+        [sanitizedUsername, sanitizedEmail, hashedPassword], function(err) {
         if (err) {
           return res.status(500).json({ error: 'Failed to create user' });
         }
 
         // Set session
         req.session.userId = this.lastID;
-        req.session.username = username;
+        req.session.username = sanitizedUsername;
 
         res.json({ 
           success: true, 
           message: 'Registration successful',
-          user: { id: this.lastID, username, email }
+          user: { id: this.lastID, username: sanitizedUsername, email: sanitizedEmail }
         });
       });
     });
@@ -457,17 +497,20 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', loginLimiter, async (req, res) => {
   try {
     const { username, password } = req.body;
 
+    // Input sanitization
+    const sanitizedUsername = username ? username.trim() : '';
+
     // Validation
-    if (!username || !password) {
+    if (!sanitizedUsername || !password) {
       return res.status(400).json({ error: 'Username and password are required' });
     }
 
     // Find user
-    db.get("SELECT * FROM users WHERE username = ? OR email = ?", [username, username], async (err, user) => {
+    db.get("SELECT * FROM users WHERE username = ? OR email = ?", [sanitizedUsername, sanitizedUsername], async (err, user) => {
       if (err) {
         return res.status(500).json({ error: 'Database error' });
       }
