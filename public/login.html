@@ -6,6 +6,7 @@
     <title>Login - Mood Recipe Finder</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/translations.js"></script>
     <style>
         .gradient-bg {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -257,6 +258,57 @@
         .bounce {
             animation: bounce 0.6s ease-out;
         }
+        
+        /* Language Switcher Styles */
+        .language-switcher {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .language-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 25px;
+            padding: 8px 16px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #4a5568;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .language-btn:hover {
+            background: rgba(255, 255, 255, 1);
+            border-color: rgba(102, 126, 234, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .current-lang {
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .switch-arrow {
+            font-size: 0.75rem;
+            opacity: 0.6;
+            transition: transform 0.3s ease;
+        }
+        
+        .language-btn:hover .switch-arrow {
+            transform: translateX(2px);
+        }
+        
+        .other-lang {
+            opacity: 0.8;
+        }
     </style>
 </head>
 <body class="gradient-bg min-h-screen flex items-center justify-center p-4">
@@ -289,15 +341,15 @@
     <div class="login-card rounded-2xl shadow-2xl p-8 w-full max-w-md relative z-10">
         <!-- Header -->
         <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-800 mb-2">Login</h1>
-            <p class="text-gray-600">Welcome back to Mood Recipe Finder</p>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2" data-translate="login.title">Login</h1>
+            <p class="text-gray-600" data-translate="login.subtitle">Welcome back to Mood Recipe Finder</p>
         </div>
 
         <!-- Login Form -->
         <form class="space-y-6">
             <!-- Username Field -->
             <div>
-                <label for="username" class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                <label for="username" class="block text-sm font-medium text-gray-700 mb-2" data-translate="login.username">Username</label>
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <i class="fas fa-user text-gray-400"></i>
@@ -306,6 +358,7 @@
                         type="text" 
                         id="username" 
                         name="username"
+                        data-translate-placeholder="login.usernamePlaceholder"
                         placeholder="Type your username"
                         class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
                         required
@@ -315,7 +368,7 @@
 
             <!-- Password Field -->
             <div>
-                <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-2" data-translate="login.password">Password</label>
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <i class="fas fa-lock text-gray-400"></i>
@@ -324,6 +377,7 @@
                         type="password" 
                         id="password" 
                         name="password"
+                        data-translate-placeholder="login.passwordPlaceholder"
                         placeholder="Type your password"
                         class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
                         required
@@ -333,7 +387,7 @@
 
             <!-- Forgot Password Link -->
             <div class="flex justify-end">
-                <a href="#" class="text-sm text-blue-600 hover:text-blue-800 transition duration-200">Forgot password?</a>
+                <a href="#" class="text-sm text-blue-600 hover:text-blue-800 transition duration-200" data-translate="login.forgotPassword">Forgot password?</a>
             </div>
 
             <!-- Login Button -->
@@ -341,7 +395,7 @@
                 type="submit"
                 class="gradient-button w-full py-3 px-6 rounded-lg text-white font-semibold text-lg transition duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
-                LOGIN
+                <span data-translate="login.loginButton">LOGIN</span>
             </button>
         </form>
 
@@ -352,7 +406,7 @@
                     <div class="w-full border-t border-gray-300"></div>
                 </div>
                 <div class="relative flex justify-center text-sm">
-                    <span class="px-2 bg-white text-gray-500">Or Sign Up Using</span>
+                    <span class="px-2 bg-white text-gray-500" data-translate="login.socialLogin">Or Sign Up Using</span>
                 </div>
             </div>
 
@@ -377,11 +431,11 @@
                     <div class="w-full border-t border-gray-300"></div>
                 </div>
                 <div class="relative flex justify-center text-sm">
-                    <span class="px-2 bg-white text-gray-500">Or Sign Up Using</span>
+                    <span class="px-2 bg-white text-gray-500" data-translate="login.orSignUp">Or Sign Up Using</span>
                 </div>
             </div>
             <div class="mt-4">
-                <a href="/register" class="text-blue-600 hover:text-blue-800 font-semibold transition duration-200">SIGN UP</a>
+                <a href="/register" class="text-blue-600 hover:text-blue-800 font-semibold transition duration-200" data-translate="login.signUpLink">SIGN UP</a>
             </div>
         </div>
     </div>
@@ -500,7 +554,7 @@
             
             // Validation with animated notifications
             if (!username || !password) {
-                showNotification('warning', 'Champs requis', 'Veuillez remplir tous les champs');
+                showNotification('warning', languageManager.getText('notifications.requiredFields'), languageManager.getText('notifications.fillAllFields'));
                 return;
             }
             
@@ -517,17 +571,17 @@
 
                 if (response.ok) {
                     console.log('✅ Login successful, showing loading screen...');
-                    showNotification('success', 'Connexion réussie', 'Redirection vers Mood Recipe Finder...', 2000);
+                    showNotification('success', languageManager.getText('notifications.loginSuccess'), languageManager.getText('notifications.loginRedirect'), 2000);
                     setTimeout(() => {
                         showLoadingScreen();
                     }, 1000);
                 } else {
                     console.log('❌ Login failed:', data.error);
-                    showNotification('error', 'Échec de connexion', data.error || 'Identifiants invalides');
+                    showNotification('error', languageManager.getText('notifications.loginFailed'), data.error || languageManager.getText('notifications.invalidCredentials'));
                 }
             } catch (error) {
                 console.error('Error:', error);
-                showNotification('error', 'Erreur de connexion', 'Veuillez réessayer plus tard');
+                showNotification('error', languageManager.getText('notifications.connectionError'), languageManager.getText('notifications.tryAgainLater'));
             }
         });
 

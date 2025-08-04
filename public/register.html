@@ -6,6 +6,7 @@
     <title>Register - Mood Recipe Finder</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/translations.js"></script>
     <style>
         .gradient-bg {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -162,6 +163,57 @@
         .bounce {
             animation: bounce 0.6s ease-out;
         }
+        
+        /* Language Switcher Styles */
+        .language-switcher {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .language-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 25px;
+            padding: 8px 16px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #4a5568;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .language-btn:hover {
+            background: rgba(255, 255, 255, 1);
+            border-color: rgba(102, 126, 234, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .current-lang {
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .switch-arrow {
+            font-size: 0.75rem;
+            opacity: 0.6;
+            transition: transform 0.3s ease;
+        }
+        
+        .language-btn:hover .switch-arrow {
+            transform: translateX(2px);
+        }
+        
+        .other-lang {
+            opacity: 0.8;
+        }
     </style>
 </head>
 <body class="gradient-bg min-h-screen flex items-center justify-center p-4">
@@ -179,15 +231,15 @@
     <div class="register-card rounded-2xl shadow-2xl p-8 w-full max-w-md relative z-10">
         <!-- Header -->
         <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-800 mb-2">Register</h1>
-            <p class="text-gray-600">Join Mood Recipe Finder today!</p>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2" data-translate="register.title">Register</h1>
+            <p class="text-gray-600" data-translate="register.subtitle">Join Mood Recipe Finder today!</p>
         </div>
 
         <!-- Register Form -->
         <form id="registerForm" class="space-y-6">
             <!-- Username Field -->
             <div>
-                <label for="username" class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                <label for="username" class="block text-sm font-medium text-gray-700 mb-2" data-translate="register.username">Username</label>
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <i class="fas fa-user text-gray-400"></i>
@@ -196,6 +248,7 @@
                         type="text" 
                         id="username" 
                         name="username"
+                        data-translate-placeholder="register.usernamePlaceholder"
                         placeholder="Choose a username"
                         class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
                         required
@@ -205,7 +258,7 @@
 
             <!-- Email Field -->
             <div>
-                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-2" data-translate="register.email">Email</label>
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <i class="fas fa-envelope text-gray-400"></i>
@@ -214,6 +267,7 @@
                         type="email" 
                         id="email" 
                         name="email"
+                        data-translate-placeholder="register.emailPlaceholder"
                         placeholder="Enter your email"
                         class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
                         required
@@ -223,7 +277,7 @@
 
             <!-- Password Field -->
             <div>
-                <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-2" data-translate="register.password">Password</label>
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <i class="fas fa-lock text-gray-400"></i>
@@ -232,6 +286,7 @@
                         type="password" 
                         id="password" 
                         name="password"
+                        data-translate-placeholder="register.passwordPlaceholder"
                         placeholder="Create a password (min 6 characters)"
                         class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
                         required
@@ -242,7 +297,7 @@
 
             <!-- Confirm Password Field -->
             <div>
-                <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+                <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-2" data-translate="register.confirmPassword">Confirm Password</label>
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <i class="fas fa-lock text-gray-400"></i>
@@ -251,6 +306,7 @@
                         type="password" 
                         id="confirmPassword" 
                         name="confirmPassword"
+                        data-translate-placeholder="register.confirmPasswordPlaceholder"
                         placeholder="Confirm your password"
                         class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
                         required
@@ -263,7 +319,7 @@
                 type="submit"
                 class="gradient-button w-full py-3 px-6 rounded-lg text-white font-semibold text-lg transition duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
-                REGISTER
+                <span data-translate="register.registerButton">REGISTER</span>
             </button>
         </form>
 
@@ -274,7 +330,7 @@
                     <div class="w-full border-t border-gray-300"></div>
                 </div>
                 <div class="relative flex justify-center text-sm">
-                    <span class="px-2 bg-white text-gray-500">Or Sign Up Using</span>
+                    <span class="px-2 bg-white text-gray-500" data-translate="register.orSignUp">Or Sign Up Using</span>
                 </div>
             </div>
 
@@ -299,11 +355,11 @@
                     <div class="w-full border-t border-gray-300"></div>
                 </div>
                 <div class="relative flex justify-center text-sm">
-                    <span class="px-2 bg-white text-gray-500">Already have an account?</span>
+                    <span class="px-2 bg-white text-gray-500" data-translate="register.alreadyHaveAccount">Already have an account?</span>
                 </div>
             </div>
             <div class="mt-4">
-                <a href="/login" class="text-blue-600 hover:text-blue-800 font-semibold transition duration-200">LOGIN</a>
+                <a href="/login" class="text-blue-600 hover:text-blue-800 font-semibold transition duration-200" data-translate="register.loginLink">LOGIN</a>
             </div>
         </div>
     </div>
@@ -401,17 +457,17 @@
             
             // Validation with animated notifications
             if (!username || !email || !password || !confirmPassword) {
-                showNotification('warning', 'Champs requis', 'Veuillez remplir tous les champs');
+                showNotification('warning', languageManager.getText('notifications.requiredFields'), languageManager.getText('notifications.fillAllFields'));
                 return;
             }
 
             if (password.length < 6) {
-                showNotification('warning', 'Mot de passe trop court', 'Le mot de passe doit contenir au moins 6 caractères');
+                showNotification('warning', languageManager.getText('notifications.passwordTooShort'), languageManager.getText('notifications.passwordMinLength'));
                 return;
             }
 
             if (password !== confirmPassword) {
-                showNotification('error', 'Mots de passe différents', 'Les mots de passe ne correspondent pas');
+                showNotification('error', languageManager.getText('notifications.passwordsDontMatch'), languageManager.getText('notifications.passwordsNotMatching'));
                 return;
             }
 
@@ -427,16 +483,16 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    showNotification('success', 'Inscription réussie', 'Redirection vers Mood Recipe Finder...', 2000);
+                    showNotification('success', languageManager.getText('notifications.registrationSuccess'), languageManager.getText('notifications.loginRedirect'), 2000);
                     setTimeout(() => {
                         window.location.href = '/dashboard';
                     }, 2000);
                 } else {
-                    showNotification('error', 'Échec de l\'inscription', data.error || 'Erreur lors de l\'inscription');
+                    showNotification('error', languageManager.getText('notifications.registrationFailed'), data.error || languageManager.getText('notifications.registrationError'));
                 }
             } catch (error) {
                 console.error('Error:', error);
-                showNotification('error', 'Erreur de connexion', 'Veuillez réessayer plus tard');
+                showNotification('error', languageManager.getText('notifications.connectionError'), languageManager.getText('notifications.tryAgainLater'));
             }
         });
 

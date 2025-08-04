@@ -6,6 +6,59 @@
     <title>Mood Recipe Finder</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/translations.js"></script>
+    <style>
+        /* Language Switcher Styles */
+        .language-switcher {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .language-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 25px;
+            padding: 8px 16px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #4a5568;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .language-btn:hover {
+            background: rgba(255, 255, 255, 1);
+            border-color: rgba(102, 126, 234, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .current-lang {
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .switch-arrow {
+            font-size: 0.75rem;
+            opacity: 0.6;
+            transition: transform 0.3s ease;
+        }
+        
+        .language-btn:hover .switch-arrow {
+            transform: translateX(2px);
+        }
+        
+        .other-lang {
+            opacity: 0.8;
+        }
+    </style>
 </head>
 <body class="bg-gradient-to-br from-purple-100 to-pink-100 min-h-screen">
     <div class="container mx-auto px-4 py-8">
@@ -17,51 +70,51 @@
                 </div>
                 <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition duration-300 flex items-center">
                     <i class="fas fa-sign-out-alt mr-2"></i>
-                    Logout
+                    <span data-translate="main.logout">Logout</span>
                 </button>
             </div>
             <h1 class="text-5xl font-bold text-gray-800 mb-4">
                 <i class="fas fa-heart text-pink-500 mr-3"></i>
-                Mood Recipe Finder
+                <span data-translate="main.title">Mood Recipe Finder</span>
             </h1>
-            <p class="text-xl text-gray-600">Tell us how you're feeling and we'll find the perfect recipe for you!</p>
+            <p class="text-xl text-gray-600" data-translate="main.subtitle">Tell us how you're feeling and we'll find the perfect recipe for you!</p>
         </div>
 
         <!-- Mood Selection -->
         <div id="moodSelection" class="max-w-4xl mx-auto mb-12">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center">How are you feeling today?</h2>
+            <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center" data-translate="main.selectMood">How are you feeling today?</h2>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <button class="mood-btn bg-blue-500 hover:bg-blue-600" data-mood="happy">
                     <i class="fas fa-smile text-2xl mb-2"></i>
-                    <span>Happy</span>
+                    <span data-translate="moods.happy">Happy</span>
                 </button>
                 <button class="mood-btn bg-gray-500 hover:bg-gray-600" data-mood="sad">
                     <i class="fas fa-sad-tear text-2xl mb-2"></i>
-                    <span>Sad</span>
+                    <span data-translate="moods.sad">Sad</span>
                 </button>
                 <button class="mood-btn bg-red-500 hover:bg-red-600" data-mood="excited">
                     <i class="fas fa-fire text-2xl mb-2"></i>
-                    <span>Excited</span>
+                    <span data-translate="moods.excited">Excited</span>
                 </button>
                 <button class="mood-btn bg-yellow-500 hover:bg-yellow-600" data-mood="anxious">
                     <i class="fas fa-wind text-2xl mb-2"></i>
-                    <span>Anxious</span>
+                    <span data-translate="moods.anxious">Anxious</span>
                 </button>
                 <button class="mood-btn bg-green-500 hover:bg-green-600" data-mood="refreshed">
                     <i class="fas fa-leaf text-2xl mb-2"></i>
-                    <span>Refreshed</span>
+                    <span data-translate="moods.refreshed">Refreshed</span>
                 </button>
                 <button class="mood-btn bg-purple-500 hover:bg-purple-600" data-mood="romantic">
                     <i class="fas fa-heart text-2xl mb-2"></i>
-                    <span>Romantic</span>
+                    <span data-translate="moods.romantic">Romantic</span>
                 </button>
                 <button class="mood-btn bg-orange-500 hover:bg-orange-600" data-mood="adventurous">
                     <i class="fas fa-compass text-2xl mb-2"></i>
-                    <span>Adventurous</span>
+                    <span data-translate="moods.adventurous">Adventurous</span>
                 </button>
                 <button class="mood-btn bg-teal-500 hover:bg-teal-600" data-mood="sick">
                     <i class="fas fa-thermometer-half text-2xl mb-2"></i>
-                    <span>Sick</span>
+                    <span data-translate="moods.sick">Sick</span>
                 </button>
             </div>
         </div>
@@ -69,7 +122,7 @@
         <!-- Loading State -->
         <div id="loading" class="hidden max-w-2xl mx-auto text-center">
             <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-pink-500 mx-auto mb-4"></div>
-            <p class="text-gray-600 text-lg">Finding the perfect recipe for your mood...</p>
+            <p class="text-gray-600 text-lg" data-translate="main.loading">Finding the perfect recipe for your mood...</p>
         </div>
 
         <!-- Recipe Display -->
@@ -88,7 +141,7 @@
                     <div>
                         <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
                             <i class="fas fa-list-ul text-pink-500 mr-2"></i>
-                            Ingredients
+                            <span data-translate="recipe.ingredients">Ingredients</span>
                         </h3>
                         <ul id="ingredientsList" class="space-y-2 text-gray-700"></ul>
                     </div>
@@ -97,7 +150,7 @@
                     <div>
                         <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
                             <i class="fas fa-utensils text-pink-500 mr-2"></i>
-                            Instructions
+                            <span data-translate="recipe.instructions">Instructions</span>
                         </h3>
                         <div id="instructionsText" class="text-gray-700 leading-relaxed"></div>
                     </div>

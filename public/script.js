@@ -68,11 +68,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 window.location.href = '/login';
             } else {
-                alert('Logout failed. Please try again.');
+                alert(languageManager.getText('notifications.logoutFailed'));
             }
         } catch (error) {
             console.error('Logout error:', error);
-            alert('Logout failed. Please try again.');
+            alert(languageManager.getText('notifications.logoutFailed'));
         }
     });
 
@@ -85,8 +85,8 @@ async function loadUserInfo() {
     try {
         const response = await fetch('/api/user');
         if (response.ok) {
-            const data = await response.json();
-            userInfo.textContent = `Welcome, ${data.user.username}!`;
+                    const data = await response.json();
+        userInfo.textContent = `${languageManager.getText('main.welcome')}, ${data.user.username}!`;
         } else {
             // If not authenticated, redirect to login
             window.location.href = '/login';
