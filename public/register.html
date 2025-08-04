@@ -166,10 +166,14 @@
         
         /* Language Switcher Styles */
         .language-switcher {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
+            position: fixed !important;
+            top: 20px !important;
+            right: 20px !important;
+            z-index: 9999 !important;
+            background: rgba(255, 255, 255, 0.9) !important;
+            border-radius: 25px !important;
+            padding: 8px 16px !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
         }
         
         .language-btn {
@@ -392,9 +396,22 @@
     </style>
 
     <script>
-        // Notification system
+        // Safe language manager access with fallbacks
+        function getText(key, fallback = key) {
+            if (window.languageManager && typeof window.languageManager.getText === 'function') {
+                return window.languageManager.getText(key);
+            }
+            return fallback;
+        }
+
+        // Safe notification system with fallbacks
         function showNotification(type, title, message, duration = 5000) {
             const container = document.getElementById('notificationContainer');
+            if (!container) {
+                console.warn('Notification container not found');
+                return;
+            }
+
             const notification = document.createElement('div');
             notification.className = `notification ${type}`;
             
@@ -447,64 +464,100 @@
         }
         
         // Form submission handling
-        document.getElementById('registerForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const username = document.getElementById('username').value;
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            
-            // Validation with animated notifications
-            if (!username || !email || !password || !confirmPassword) {
-                showNotification('warning', languageManager.getText('notifications.requiredFields'), languageManager.getText('notifications.fillAllFields'));
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('registerForm');
+            if (!form) {
+                console.error('Register form not found');
                 return;
             }
 
-            if (password.length < 6) {
-                showNotification('warning', languageManager.getText('notifications.passwordTooShort'), languageManager.getText('notifications.passwordMinLength'));
-                return;
-            }
-
-            if (password !== confirmPassword) {
-                showNotification('error', languageManager.getText('notifications.passwordsDontMatch'), languageManager.getText('notifications.passwordsNotMatching'));
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/register', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ username, email, password })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    showNotification('success', languageManager.getText('notifications.registrationSuccess'), languageManager.getText('notifications.loginRedirect'), 2000);
-                    setTimeout(() => {
-                        window.location.href = '/dashboard';
-                    }, 2000);
-                } else {
-                    showNotification('error', languageManager.getText('notifications.registrationFailed'), data.error || languageManager.getText('notifications.registrationError'));
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const username = document.getElementById('username')?.value || '';
+                const email = document.getElementById('email')?.value || '';
+                const password = document.getElementById('password')?.value || '';
+                const confirmPassword = document.getElementById('confirmPassword')?.value || '';
+                
+                // Validation with animated notifications
+                if (!username || !email || !password || !confirmPassword) {
+                    showNotification('warning', 
+                        getText('notifications.requiredFields', 'Required fields'), 
+                        getText('notifications.fillAllFields', 'Please fill in all fields')
+                    );
+                    return;
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                showNotification('error', languageManager.getText('notifications.connectionError'), languageManager.getText('notifications.tryAgainLater'));
-            }
+
+                if (password.length < 6) {
+                    showNotification('warning', 
+                        getText('notifications.passwordTooShort', 'Password too short'), 
+                        getText('notifications.passwordMinLength', 'Password must be at least 6 characters')
+                    );
+                    return;
+                }
+
+                if (password !== confirmPassword) {
+                    showNotification('error', 
+                        getText('notifications.passwordsDontMatch', 'Passwords don\'t match'), 
+                        getText('notifications.passwordsNotMatching', 'Passwords do not match')
+                    );
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/register', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ username, email, password })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        showNotification('success', 
+                            getText('notifications.registrationSuccess', 'Registration successful'), 
+                            getText('notifications.loginRedirect', 'Redirecting to Mood Recipe Finder...'), 
+                            2000
+                        );
+                        setTimeout(() => {
+                            window.location.href = '/';
+                        }, 2000);
+                    } else {
+                        showNotification('error', 
+                            getText('notifications.registrationFailed', 'Registration failed'), 
+                            data.error || getText('notifications.registrationError', 'Registration error')
+                        );
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showNotification('error', 
+                        getText('notifications.connectionError', 'Connection error'), 
+                        getText('notifications.tryAgainLater', 'Please try again later')
+                    );
+                }
+            });
+
+            // Add some interactive effects
+            document.querySelectorAll('input').forEach(input => {
+                input.addEventListener('focus', function() {
+                    this.parentElement.classList.add('ring-2', 'ring-blue-500');
+                });
+                
+                input.addEventListener('blur', function() {
+                    this.parentElement.classList.remove('ring-2', 'ring-blue-500');
+                });
+            });
         });
 
-        // Add some interactive effects
-        document.querySelectorAll('input').forEach(input => {
-            input.addEventListener('focus', function() {
-                this.parentElement.classList.add('ring-2', 'ring-blue-500');
-            });
-            
-            input.addEventListener('blur', function() {
-                this.parentElement.classList.remove('ring-2', 'ring-blue-500');
-            });
+        // Initialize language manager when translations.js loads
+        window.addEventListener('load', function() {
+            if (window.languageManager) {
+                console.log('✅ Language manager loaded successfully');
+            } else {
+                console.warn('⚠️ Language manager not available, using fallback text');
+            }
         });
     </script>
 </body>

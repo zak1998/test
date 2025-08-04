@@ -31,7 +31,7 @@ app.use(helmet({
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: 1000, // limit each IP to 1000 requests per windowMs (increased for development)
   message: 'Too many requests from this IP, please try again later.'
 });
 app.use(limiter);
@@ -39,7 +39,7 @@ app.use(limiter);
 // Login rate limiting (stricter)
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 login attempts per windowMs
+  max: 20, // limit each IP to 20 login attempts per windowMs (increased for development)
   message: 'Too many login attempts, please try again later.'
 });
 
@@ -62,6 +62,7 @@ try {
   console.log('✅ SQLite session store initialized successfully');
 } catch (error) {
   console.log('⚠️ SQLite session store failed, using MemoryStore as fallback');
+  console.log('⚠️ Error details:', error.message);
   sessionStore = undefined;
 }
 
@@ -80,20 +81,221 @@ app.use(session({
   name: 'mood-recipe-session' // Custom session name
 }));
 
-// Add session debugging middleware
-app.use((req, res, next) => {
-  console.log('🔍 Request session info:', {
-    sessionId: req.sessionID,
-    userId: req.session.userId,
-    username: req.session.username,
-    url: req.url,
-    method: req.method
+// Add session debugging middleware (only in development)
+if (NODE_ENV === 'development') {
+  app.use((req, res, next) => {
+    // Only log non-static requests to reduce noise
+    if (!req.url.startsWith('/api/') && !req.url.includes('.')) {
+      console.log('🔍 Request:', req.method, req.url);
+    }
+    
+    // Log session information for API requests
+    if (req.url.startsWith('/api/')) {
+      console.log('🔍 Session ID:', req.sessionID);
+      console.log('🔍 Session data:', req.session);
+    }
+    
+    next();
   });
-  next();
-});
+}
 
 // Database setup
 const db = new sqlite3.Database('recipes.db');
+
+// Multilingual recipe translations
+const recipeTranslations = {
+  fr: {
+    // SAD MOOD RECIPES
+    "Comforting Mac and Cheese": {
+      name: "Macaroni au Fromage Réconfortant",
+      ingredients: "Macaroni, fromage cheddar, lait, beurre, farine, chapelure",
+      instructions: "1. Cuire les macaronis\n2. Préparer la sauce au fromage avec beurre, farine, lait et fromage\n3. Combiner et saupoudrer de chapelure\n4. Cuire jusqu'à doré"
+    },
+    "Warm Chocolate Chip Cookies": {
+      name: "Cookies aux Pépites de Chocolat Chauds",
+      ingredients: "Farine, beurre, sucre roux, sucre blanc, œufs, vanille, pépites de chocolat, sel",
+      instructions: "1. Crémer le beurre et les sucres\n2. Ajouter les œufs et la vanille\n3. Mélanger les ingrédients secs\n4. Incorporer les pépites de chocolat\n5. Cuire à 190°C pendant 10-12 minutes"
+    },
+    "Creamy Mashed Potatoes": {
+      name: "Purée de Pommes de Terre Crémeuse",
+      ingredients: "Pommes de terre, beurre, lait, sel, poivre, ail en poudre",
+      instructions: "1. Faire bouillir les pommes de terre jusqu'à tendreté\n2. Égoutter et écraser\n3. Ajouter beurre, lait et assaisonnements\n4. Fouetter jusqu'à crémeux"
+    },
+    "Grilled Cheese with Tomato Soup": {
+      name: "Sandwich au Fromage avec Soupe à la Tomate",
+      ingredients: "Pain, fromage cheddar, beurre, tomates, crème, basilic, ail",
+      instructions: "1. Préparer le sandwich au fromage avec beurre et fromage\n2. Mixer tomates, crème et assaisonnements pour la soupe\n3. Chauffer la soupe et servir ensemble"
+    },
+
+    // HAPPY MOOD RECIPES
+    "Energizing Smoothie Bowl": {
+      name: "Bol Smoothie Énergisant",
+      ingredients: "Banane, baies, yaourt, granola, miel, graines de chia",
+      instructions: "1. Mixer banane, baies et yaourt\n2. Verser dans un bol\n3. Garnir de granola, miel et graines de chia"
+    },
+    "Rainbow Fruit Salad": {
+      name: "Salade de Fruits Arc-en-Ciel",
+      ingredients: "Fraises, oranges, ananas, kiwi, raisins, menthe, miel",
+      instructions: "1. Laver et couper tous les fruits\n2. Combiner dans un grand bol\n3. Arroser de miel\n4. Garnir de menthe fraîche"
+    },
+    "Colorful Buddha Bowl": {
+      name: "Bol Buddha Coloré",
+      ingredients: "Quinoa, patate douce, avocat, pois chiches, kale, tahini, citron",
+      instructions: "1. Cuire le quinoa\n2. Rôtir la patate douce et les pois chiches\n3. Masser le kale avec du citron\n4. Arranger dans le bol avec la vinaigrette tahini"
+    },
+    "Sunny Side Up Toast": {
+      name: "Toast Œuf au Plat",
+      ingredients: "Pain au levain, œufs, avocat, tomates cerises, micro-pousses, huile d'olive",
+      instructions: "1. Griller le pain\n2. Faire frire les œufs au plat\n3. Écraser l'avocat sur le toast\n4. Garnir d'œufs, tomates et pousses"
+    },
+
+    // EXCITED MOOD RECIPES
+    "Spicy Chicken Tacos": {
+      name: "Tacos de Poulet Épicés",
+      ingredients: "Blanc de poulet, tortillas, sauce piquante, oignons, coriandre, citron vert",
+      instructions: "1. Assaisonner et cuire le poulet avec des épices\n2. Réchauffer les tortillas\n3. Assembler les tacos avec les garnitures\n4. Servir avec des quartiers de citron vert"
+    },
+    "Dragon Breath Ramen": {
+      name: "Ramen Souffle de Dragon",
+      ingredients: "Nouilles ramen, bouillon de poulet, piments fantômes, ail, gingembre, sauce soja, oignons verts",
+      instructions: "1. Faire mijoter le bouillon avec les piments et les aromates\n2. Cuire les nouilles\n3. Ajouter la sauce piquante au goût\n4. Garnir d'oignons verts"
+    },
+    "Volcano Wings": {
+      name: "Ailes de Poulet Volcan",
+      ingredients: "Ailes de poulet, sauce piquante, beurre, ail, poivre de Cayenne, sauce au fromage bleu",
+      instructions: "1. Frire ou cuire les ailes jusqu'à croustillant\n2. Préparer le mélange de sauce piquante\n3. Enrober les ailes de sauce\n4. Servir avec la sauce au fromage bleu"
+    },
+    "Firecracker Shrimp": {
+      name: "Crevettes Pétard",
+      ingredients: "Crevettes, farine, œufs, sauce piquante, miel, ail, oignons verts",
+      instructions: "1. Paner les crevettes dans la farine et les œufs\n2. Frire jusqu'à doré\n3. Enrober de sauce épicée\n4. Garnir d'oignons verts"
+    },
+
+    // ANXIOUS MOOD RECIPES
+    "Calming Chamomile Tea Cookies": {
+      name: "Cookies au Thé à la Camomille Apaisants",
+      ingredients: "Farine, beurre, sucre, thé à la camomille, vanille, œuf",
+      instructions: "1. Mélanger les ingrédients secs avec la camomille moulue\n2. Crémer le beurre et le sucre\n3. Combiner et façonner les cookies\n4. Cuire jusqu'à doré"
+    },
+    "Lavender Honey Toast": {
+      name: "Toast au Miel de Lavande",
+      ingredients: "Pain au levain, miel, boutons de lavande, beurre, sel de mer",
+      instructions: "1. Griller le pain jusqu'à doré\n2. Tartiner de beurre\n3. Arroser de miel à la lavande\n4. Saupoudrer de sel de mer"
+    },
+    "Mindful Matcha Latte": {
+      name: "Latte Matcha Conscient",
+      ingredients: "Poudre de matcha, lait d'amande, miel, vanille, eau chaude",
+      instructions: "1. Fouetter le matcha avec l'eau chaude\n2. Chauffer le lait d'amande\n3. Combiner avec miel et vanille\n4. Remuer doucement et servir"
+    },
+    "Soothing Oatmeal with Berries": {
+      name: "Flocons d'Avoine Apaisants aux Baies",
+      ingredients: "Flocons d'avoine, lait d'amande, baies, miel, cannelle, noix",
+      instructions: "1. Cuire les flocons d'avoine dans le lait d'amande\n2. Ajouter les baies et le miel\n3. Saupoudrer de cannelle\n4. Garnir de noix"
+    },
+
+    // SICK MOOD RECIPES
+    "Cozy Chicken Soup": {
+      name: "Soupe de Poulet Réconfortante",
+      ingredients: "Poulet, légumes, bouillon, herbes, nouilles",
+      instructions: "1. Faire mijoter le poulet avec les légumes et les herbes\n2. Ajouter les nouilles\n3. Cuire jusqu'à ce que les nouilles soient tendres"
+    },
+    "Ginger Lemon Tea": {
+      name: "Thé au Gingembre et Citron",
+      ingredients: "Gingembre frais, citron, miel, eau chaude, curcuma",
+      instructions: "1. Couper le gingembre et le citron\n2. Faire bouillir l'eau avec le gingembre\n3. Ajouter le citron et le miel\n4. Filtrer et servir chaud"
+    },
+    "Gentle Rice Porridge": {
+      name: "Porridge de Riz Doux",
+      ingredients: "Riz blanc, bouillon de poulet, gingembre, oignons verts, sauce soja",
+      instructions: "1. Cuire le riz dans le bouillon jusqu'à très tendre\n2. Ajouter le gingembre et les oignons verts\n3. Assaisonner avec la sauce soja\n4. Servir chaud"
+    },
+    "Honey Toast with Cinnamon": {
+      name: "Toast au Miel et Cannelle",
+      ingredients: "Pain blanc, miel, cannelle, beurre, lait chaud",
+      instructions: "1. Griller légèrement le pain\n2. Tartiner de beurre et miel\n3. Saupoudrer de cannelle\n4. Servir avec du lait chaud"
+    },
+
+    // ROMANTIC MOOD RECIPES
+    "Chocolate Lava Cake": {
+      name: "Gâteau au Chocolat Coulant",
+      ingredients: "Chocolat noir, beurre, œufs, sucre, farine, vanille",
+      instructions: "1. Faire fondre le chocolat et le beurre\n2. Mélanger avec les autres ingrédients\n3. Cuire dans des ramequins\n4. Servir chaud avec de la glace"
+    },
+    "Strawberry Champagne Sorbet": {
+      name: "Sorbet Fraise Champagne",
+      ingredients: "Fraises, champagne, sucre, jus de citron, menthe",
+      instructions: "1. Réduire en purée les fraises avec le champagne\n2. Ajouter le sucre et le citron\n3. Congeler dans une sorbetière\n4. Garnir de menthe"
+    },
+    "Truffle Pasta": {
+      name: "Pâtes aux Truffes",
+      ingredients: "Fettuccine, huile de truffe, parmesan, beurre, ail, persil",
+      instructions: "1. Cuire les pâtes al dente\n2. Faire revenir l'ail dans le beurre\n3. Mélanger avec l'huile de truffe et le parmesan\n4. Garnir de persil"
+    },
+    "Dark Chocolate Covered Strawberries": {
+      name: "Fraises au Chocolat Noir",
+      ingredients: "Fraises fraîches, chocolat noir, chocolat blanc, huile de coco",
+      instructions: "1. Faire fondre le chocolat noir\n2. Tremper les fraises\n3. Décorer avec le chocolat blanc\n4. Réfrigérer jusqu'à prise"
+    },
+
+    // REFRESHED MOOD RECIPES
+    "Fresh Garden Salad": {
+      name: "Salade de Jardin Fraîche",
+      ingredients: "Mélange de salades, tomates, concombre, avocat, noix, vinaigrette",
+      instructions: "1. Laver et couper les légumes\n2. Combiner dans un bol\n3. Ajouter les noix et la vinaigrette\n4. Mélanger délicatement"
+    },
+    "Cucumber Mint Water": {
+      name: "Eau Concombre Menthe",
+      ingredients: "Concombre, menthe fraîche, citron, eau, glace",
+      instructions: "1. Couper le concombre et le citron\n2. Ajouter les feuilles de menthe\n3. Remplir d'eau froide\n4. Laisser infuser 30 minutes"
+    },
+    "Green Goddess Bowl": {
+      name: "Bol Déesse Verte",
+      ingredients: "Kale, épinards, avocat, edamame, quinoa, tahini, citron",
+      instructions: "1. Masser le kale avec le citron\n2. Cuire le quinoa\n3. Arranger avec avocat et edamame\n4. Arroser de sauce tahini"
+    },
+    "Citrus Fruit Platter": {
+      name: "Plateau de Fruits Agrumes",
+      ingredients: "Oranges, pamplemousse, kiwi, menthe, miel, flocons de noix de coco",
+      instructions: "1. Peler et segmenter les agrumes\n2. Arranger sur un plateau\n3. Arroser de miel\n4. Garnir de menthe et noix de coco"
+    },
+
+    // ADVENTUROUS MOOD RECIPES
+    "Spicy Ramen Bowl": {
+      name: "Bol Ramen Épicé",
+      ingredients: "Nouilles ramen, bouillon, œufs, légumes, sauce piquante, oignons verts",
+      instructions: "1. Cuire les nouilles\n2. Préparer le bouillon épicé\n3. Ajouter les garnitures\n4. Servir chaud"
+    },
+    "Korean BBQ Tacos": {
+      name: "Tacos BBQ Coréen",
+      ingredients: "Travers de bœuf, tortillas, kimchi, gochujang, oignons verts, graines de sésame",
+      instructions: "1. Mariner le bœuf dans la sauce BBQ coréenne\n2. Griller jusqu'à carbonisé\n3. Assembler avec le kimchi\n4. Garnir de graines de sésame"
+    },
+    "Thai Green Curry": {
+      name: "Curry Vert Thaï",
+      ingredients: "Lait de coco, pâte de curry vert, légumes, tofu, sauce de poisson, basilic",
+      instructions: "1. Faire revenir la pâte de curry dans le lait de coco\n2. Ajouter les légumes et le tofu\n3. Faire mijoter jusqu'à tendreté\n4. Garnir de basilic"
+    },
+    "Moroccan Couscous": {
+      name: "Couscous Marocain",
+      ingredients: "Couscous, pois chiches, abricots, amandes, cannelle, curcuma, menthe",
+      instructions: "1. Cuire le couscous avec les épices\n2. Ajouter les pois chiches et les abricots\n3. Faire griller les amandes\n4. Garnir de menthe fraîche"
+    }
+  }
+};
+
+// Function to translate recipe based on user's language preference
+function translateRecipe(recipe, userLanguage = 'en') {
+  if (userLanguage === 'fr' && recipeTranslations.fr[recipe.name]) {
+    const translation = recipeTranslations.fr[recipe.name];
+    return {
+      ...recipe,
+      name: translation.name,
+      ingredients: translation.ingredients,
+      instructions: translation.instructions
+    };
+  }
+  return recipe;
+}
 
 // Initialize database with tables and sample data
 db.serialize(() => {
@@ -427,31 +629,17 @@ db.serialize(() => {
 
 // Authentication middleware
 function requireAuth(req, res, next) {
-  console.log('🔍 requireAuth check:', {
-    sessionId: req.sessionID,
-    userId: req.session.userId,
-    hasSession: !!req.session.userId
-  });
-  
   if (req.session.userId) {
     next();
   } else {
-    console.log('❌ Authentication failed - redirecting to login');
     res.redirect('/login');
   }
 }
 
 // Check if user is authenticated
 function isAuthenticated(req, res, next) {
-  console.log('🔍 isAuthenticated check:', {
-    sessionId: req.sessionID,
-    userId: req.session.userId,
-    hasSession: !!req.session.userId
-  });
-  
   if (req.session.userId) {
-    console.log('✅ User already authenticated - redirecting to dashboard');
-    res.redirect('/dashboard');
+    res.redirect('/');
   } else {
     next();
   }
@@ -548,17 +736,23 @@ app.post('/api/login', loginLimiter, async (req, res) => {
       // Set session
       req.session.userId = user.id;
       req.session.username = user.username;
-      
-      console.log('🔐 Session set:', {
-        userId: req.session.userId,
-        username: req.session.username,
-        sessionId: req.sessionID
-      });
+      req.session.languagePreference = 'en'; // Set default language
 
-      res.json({ 
-        success: true, 
-        message: 'Login successful',
-        user: { id: user.id, username: user.username, email: user.email }
+      // Force session save
+      req.session.save((err) => {
+        if (err) {
+          console.error('❌ Error saving session during login:', err);
+          return res.status(500).json({ error: 'Failed to create session' });
+        }
+        
+        console.log('✅ Session created successfully for user:', user.username);
+        console.log('✅ Session data:', req.session);
+        
+        res.json({ 
+          success: true, 
+          message: 'Login successful',
+          user: { id: user.id, username: user.username, email: user.email }
+        });
       });
     });
   } catch (error) {
@@ -581,11 +775,40 @@ app.get('/api/user', (req, res) => {
       if (err || !user) {
         return res.status(404).json({ error: 'User not found' });
       }
-      res.json({ user });
+      res.json({ 
+        user,
+        languagePreference: req.session.languagePreference || 'en'
+      });
     });
   } else {
     res.status(401).json({ error: 'Not authenticated' });
   }
+});
+
+// API to update user's language preference
+app.post('/api/language', requireAuth, (req, res) => {
+  const { language } = req.body;
+  
+  if (!language || !['en', 'fr'].includes(language)) {
+    return res.status(400).json({ error: 'Invalid language. Must be "en" or "fr"' });
+  }
+  
+  req.session.languagePreference = language;
+  
+  // Force session save
+  req.session.save((err) => {
+    if (err) {
+      console.error('❌ Error saving session:', err);
+      return res.status(500).json({ error: 'Failed to save language preference' });
+    }
+    
+    console.log('✅ Language preference saved to session:', language);
+    res.json({ 
+      success: true, 
+      message: 'Language preference updated',
+      language: language
+    });
+  });
 });
 
 // API Routes (protected)
@@ -603,7 +826,10 @@ app.get('/api/recipes/:mood', requireAuth, (req, res) => {
       return;
     }
     
-    res.json(rows[0]);
+    const recipe = rows[0];
+    const userLanguage = req.session.languagePreference || 'en';
+    const translatedRecipe = translateRecipe(recipe, userLanguage);
+    res.json(translatedRecipe);
   });
 });
 
@@ -620,6 +846,11 @@ app.get('/api/moods', requireAuth, (req, res) => {
 });
 
 
+
+// Test route for language switcher
+app.get('/test', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'test.html'));
+});
 
 // Page Routes
 app.get('/', (req, res) => {
@@ -639,7 +870,7 @@ app.get('/register', isAuthenticated, (req, res) => {
 });
 
 app.get('/dashboard', requireAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.redirect('/');
 });
 
 // Block direct access to index.html
@@ -649,6 +880,16 @@ app.get('/index.html', (req, res) => {
   } else {
     res.redirect('/login');
   }
+});
+
+// Explicit route for translations.js to ensure it's served correctly
+app.get('/translations.js', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'translations.js'), (err) => {
+    if (err) {
+      console.error('❌ Error serving translations.js:', err);
+      res.status(404).send('Translations file not found');
+    }
+  });
 });
 
 app.listen(PORT, () => {

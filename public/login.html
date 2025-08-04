@@ -261,10 +261,14 @@
         
         /* Language Switcher Styles */
         .language-switcher {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
+            position: fixed !important;
+            top: 20px !important;
+            right: 20px !important;
+            z-index: 9999 !important;
+            background: rgba(255, 255, 255, 0.9) !important;
+            border-radius: 25px !important;
+            padding: 8px 16px !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
         }
         
         .language-btn {
@@ -322,8 +326,8 @@
                 <i class="fas fa-heart"></i>
             </div>
             <div class="loading-spinner"></div>
-            <div class="loading-text">Welcome to Mood Recipe Finder</div>
-            <div class="loading-subtext">Finding the perfect recipe for your mood...</div>
+                            <div class="loading-text" data-translate="login.loadingTitle">Bienvenue sur Mood Recipe Finder</div>
+                <div class="loading-subtext" data-translate="login.loadingSubtitle">Trouver la recette parfaite pour votre humeur...</div>
             <div class="progress-bar">
                 <div id="progressFill" class="progress-fill"></div>
             </div>
@@ -468,9 +472,22 @@
     </style>
 
     <script>
-        // Notification system
+        // Safe language manager access with fallbacks
+        function getText(key, fallback = key) {
+            if (window.languageManager && typeof window.languageManager.getText === 'function') {
+                return window.languageManager.getText(key);
+            }
+            return fallback;
+        }
+
+        // Safe notification system with fallbacks
         function showNotification(type, title, message, duration = 5000) {
             const container = document.getElementById('notificationContainer');
+            if (!container) {
+                console.warn('Notification container not found');
+                return;
+            }
+
             const notification = document.createElement('div');
             notification.className = `notification ${type}`;
             
@@ -527,6 +544,12 @@
             const loadingScreen = document.getElementById('loadingScreen');
             const progressFill = document.getElementById('progressFill');
             
+            if (!loadingScreen || !progressFill) {
+                console.warn('Loading screen elements not found');
+                window.location.href = '/';
+                return;
+            }
+
             loadingScreen.classList.add('show');
             
             // Animate progress bar over 2.5 seconds
@@ -539,61 +562,91 @@
                     clearInterval(interval);
                     // Redirect after progress completes
                     setTimeout(() => {
-                        window.location.href = '/dashboard';
+                        window.location.href = '/';
                     }, 500);
                 }
             }, 50); // 50ms intervals for smooth animation
         }
         
         // Form submission handling
-        document.querySelector('form').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            
-            // Validation with animated notifications
-            if (!username || !password) {
-                showNotification('warning', languageManager.getText('notifications.requiredFields'), languageManager.getText('notifications.fillAllFields'));
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            if (!form) {
+                console.error('Login form not found');
                 return;
             }
-            
-            try {
-                const response = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ username, password })
-                });
 
-                const data = await response.json();
-
-                if (response.ok) {
-                    console.log('✅ Login successful, showing loading screen...');
-                    showNotification('success', languageManager.getText('notifications.loginSuccess'), languageManager.getText('notifications.loginRedirect'), 2000);
-                    setTimeout(() => {
-                        showLoadingScreen();
-                    }, 1000);
-                } else {
-                    console.log('❌ Login failed:', data.error);
-                    showNotification('error', languageManager.getText('notifications.loginFailed'), data.error || languageManager.getText('notifications.invalidCredentials'));
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const username = document.getElementById('username')?.value || '';
+                const password = document.getElementById('password')?.value || '';
+                
+                // Validation with animated notifications
+                if (!username || !password) {
+                    showNotification('warning', 
+                        getText('notifications.requiredFields', 'Required fields'), 
+                        getText('notifications.fillAllFields', 'Please fill in all fields')
+                    );
+                    return;
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                showNotification('error', languageManager.getText('notifications.connectionError'), languageManager.getText('notifications.tryAgainLater'));
-            }
+                
+                try {
+                    const response = await fetch('/api/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ username, password })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        console.log('✅ Login successful, showing loading screen...');
+                        showNotification('success', 
+                            getText('notifications.loginSuccess', 'Login successful'), 
+                            getText('notifications.loginRedirect', 'Redirecting to Mood Recipe Finder...'), 
+                            2000
+                        );
+                        setTimeout(() => {
+                            showLoadingScreen();
+                        }, 1000);
+                    } else {
+                        console.log('❌ Login failed:', data.error);
+                        showNotification('error', 
+                            getText('notifications.loginFailed', 'Login failed'), 
+                            data.error || getText('notifications.invalidCredentials', 'Invalid credentials')
+                        );
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showNotification('error', 
+                        getText('notifications.connectionError', 'Connection error'), 
+                        getText('notifications.tryAgainLater', 'Please try again later')
+                    );
+                }
+            });
+
+            // Add some interactive effects
+            document.querySelectorAll('input').forEach(input => {
+                input.addEventListener('focus', function() {
+                    this.parentElement.classList.add('ring-2', 'ring-blue-500');
+                });
+                
+                input.addEventListener('blur', function() {
+                    this.parentElement.classList.remove('ring-2', 'ring-blue-500');
+                });
+            });
         });
 
-        // Add some interactive effects
-        document.querySelectorAll('input').forEach(input => {
-            input.addEventListener('focus', function() {
-                this.parentElement.classList.add('ring-2', 'ring-blue-500');
-            });
-            
-            input.addEventListener('blur', function() {
-                this.parentElement.classList.remove('ring-2', 'ring-blue-500');
-            });
+        // Initialize language manager when translations.js loads
+        window.addEventListener('load', function() {
+            if (window.languageManager) {
+                console.log('✅ Language manager loaded successfully');
+            } else {
+                console.warn('⚠️ Language manager not available, using fallback text');
+            }
         });
     </script>
 </body>

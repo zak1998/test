@@ -13,7 +13,9 @@ const translations = {
             loginButton: "SE CONNECTER",
             orSignUp: "Ou s'inscrire avec",
             signUpLink: "S'INSCRIRE",
-            socialLogin: "Ou se connecter avec"
+            socialLogin: "Ou se connecter avec",
+            loadingTitle: "Bienvenue sur Mood Recipe Finder",
+            loadingSubtitle: "Trouver la recette parfaite pour votre humeur..."
         },
         // Register page
         register: {
@@ -44,7 +46,8 @@ const translations = {
             backToMoods: "Retour aux humeurs",
             loading: "Chargement...",
             error: "Erreur",
-            noRecipeFound: "Aucune recette trouvée pour cette humeur"
+            noRecipeFound: "Aucune recette trouvée pour cette humeur",
+            retry: "Réessayer"
         },
         // Moods
         moods: {
@@ -112,7 +115,9 @@ const translations = {
             loginButton: "LOGIN",
             orSignUp: "Or Sign Up Using",
             signUpLink: "SIGN UP",
-            socialLogin: "Or Sign Up Using"
+            socialLogin: "Or Sign Up Using",
+            loadingTitle: "Welcome to Mood Recipe Finder",
+            loadingSubtitle: "Finding the perfect recipe for your mood..."
         },
         // Register page
         register: {
@@ -143,7 +148,8 @@ const translations = {
             backToMoods: "Back to Moods",
             loading: "Loading...",
             error: "Error",
-            noRecipeFound: "No recipe found for this mood"
+            noRecipeFound: "No recipe found for this mood",
+            retry: "Try Again"
         },
         // Moods
         moods: {
@@ -204,35 +210,89 @@ const translations = {
 class LanguageManager {
     constructor() {
         this.currentLanguage = localStorage.getItem('language') || 'fr';
+        this.initialized = false;
         this.init();
     }
 
     init() {
-        this.updateLanguage();
-        this.createLanguageSwitcher();
+        try {
+            this.updateLanguage();
+            this.createLanguageSwitcher();
+            this.initialized = true;
+            console.log('✅ Language manager initialized successfully');
+        } catch (error) {
+            console.error('❌ Error initializing language manager:', error);
+            this.initialized = false;
+        }
     }
 
     setLanguage(lang) {
-        this.currentLanguage = lang;
-        localStorage.setItem('language', lang);
-        this.updateLanguage();
-        this.updateLanguageSwitcher();
+        try {
+            console.log('🔄 setLanguage called with:', lang);
+            console.log('🔄 Current language before change:', this.currentLanguage);
+            
+            this.currentLanguage = lang;
+            localStorage.setItem('language', lang);
+            console.log('🔄 Language stored in localStorage');
+            
+            this.updateLanguage();
+            console.log('🔄 UI updated');
+            
+            this.updateLanguageSwitcher();
+            console.log('🔄 Language switcher updated');
+            
+            console.log('✅ Language changed to:', lang);
+            
+            // Send language preference to server
+            this.updateServerLanguagePreference(lang);
+            
+            // Dispatch custom event for language change
+            window.dispatchEvent(new CustomEvent('languageChanged', { detail: { language: lang } }));
+            console.log('🔄 languageChanged event dispatched');
+        } catch (error) {
+            console.error('❌ Error changing language:', error);
+        }
+    }
+
+    async updateServerLanguagePreference(language) {
+        try {
+            const response = await fetch('/api/language', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ language })
+            });
+
+            if (response.ok) {
+                console.log('✅ Language preference updated on server');
+            } else {
+                console.warn('⚠️ Failed to update language preference on server');
+            }
+        } catch (error) {
+            console.error('❌ Error updating language preference on server:', error);
+        }
     }
 
     getText(key) {
-        const keys = key.split('.');
-        let text = translations[this.currentLanguage];
-        
-        for (const k of keys) {
-            if (text && text[k]) {
-                text = text[k];
-            } else {
-                console.warn(`Translation key not found: ${key}`);
-                return key;
+        try {
+            const keys = key.split('.');
+            let text = translations[this.currentLanguage];
+            
+            for (const k of keys) {
+                if (text && text[k]) {
+                    text = text[k];
+                } else {
+                    console.warn(`Translation key not found: ${key}`);
+                    return key;
+                }
             }
+            
+            return text;
+        } catch (error) {
+            console.error('❌ Error getting text for key:', key, error);
+            return key;
         }
-        
-        return text;
     }
 
     getCurrentLanguage() {
@@ -240,79 +300,225 @@ class LanguageManager {
     }
 
     updateLanguage() {
-        // Update all elements with data-translate attribute
-        document.querySelectorAll('[data-translate]').forEach(element => {
-            const key = element.getAttribute('data-translate');
-            const text = this.getText(key);
-            if (text) {
-                element.textContent = text;
-            }
-        });
+        try {
+            // Update all elements with data-translate attribute
+            document.querySelectorAll('[data-translate]').forEach(element => {
+                const key = element.getAttribute('data-translate');
+                const text = this.getText(key);
+                if (text) {
+                    element.textContent = text;
+                }
+            });
 
-        // Update placeholders
-        document.querySelectorAll('[data-translate-placeholder]').forEach(element => {
-            const key = element.getAttribute('data-translate-placeholder');
-            const text = this.getText(key);
-            if (text) {
-                element.placeholder = text;
-            }
-        });
+            // Update placeholders
+            document.querySelectorAll('[data-translate-placeholder]').forEach(element => {
+                const key = element.getAttribute('data-translate-placeholder');
+                const text = this.getText(key);
+                if (text) {
+                    element.placeholder = text;
+                }
+            });
 
-        // Update titles
-        document.querySelectorAll('[data-translate-title]').forEach(element => {
-            const key = element.getAttribute('data-translate-title');
-            const text = this.getText(key);
-            if (text) {
-                element.title = text;
-            }
-        });
+            // Update titles
+            document.querySelectorAll('[data-translate-title]').forEach(element => {
+                const key = element.getAttribute('data-translate-title');
+                const text = this.getText(key);
+                if (text) {
+                    element.title = text;
+                }
+            });
+        } catch (error) {
+            console.error('❌ Error updating language:', error);
+        }
     }
 
     createLanguageSwitcher() {
-        // Remove existing language switcher if any
-        const existingSwitcher = document.getElementById('languageSwitcher');
-        if (existingSwitcher) {
-            existingSwitcher.remove();
-        }
+        try {
+            // Remove existing language switcher if any
+            const existingSwitcher = document.getElementById('languageSwitcher');
+            if (existingSwitcher) {
+                existingSwitcher.remove();
+            }
 
-        const switcher = document.createElement('div');
-        switcher.id = 'languageSwitcher';
-        switcher.className = 'language-switcher';
-        
-        const currentLang = this.currentLanguage === 'fr' ? '🇫🇷 FR' : '🇺🇸 EN';
-        const otherLang = this.currentLanguage === 'fr' ? '🇺🇸 EN' : '🇫🇷 FR';
-        
-        switcher.innerHTML = `
-            <button class="language-btn" onclick="languageManager.setLanguage('${this.currentLanguage === 'fr' ? 'en' : 'fr'}')">
+            // Check if document.body exists
+            if (!document.body) {
+                console.warn('⚠️ Document body not available for language switcher');
+                return;
+            }
+
+            const switcher = document.createElement('div');
+            switcher.id = 'languageSwitcher';
+            switcher.className = 'language-switcher';
+            
+            const currentLang = this.currentLanguage === 'fr' ? '🇫🇷 FR' : '🇺🇸 EN';
+            const otherLang = this.currentLanguage === 'fr' ? '🇺🇸 EN' : '🇫🇷 FR';
+            
+            // Create button with direct event listener instead of onclick
+            const button = document.createElement('button');
+            button.className = 'language-btn';
+            button.id = 'languageSwitchBtn';
+            
+            button.innerHTML = `
                 <span class="current-lang">${currentLang}</span>
                 <span class="switch-arrow">→</span>
                 <span class="other-lang">${otherLang}</span>
-            </button>
-        `;
+            `;
+            
+            // Add click event listener directly
+            button.addEventListener('click', (e) => {
+                console.log('🔄 Language button clicked!');
+                console.log('🔄 Event details:', e);
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const currentLang = this.getCurrentLanguage();
+                const newLang = currentLang === 'fr' ? 'en' : 'fr';
+                console.log('🔄 Switching from', currentLang, 'to', newLang);
+                
+                // Test if the button is actually clickable
+                console.log('🔄 Button element:', button);
+                console.log('🔄 Button parent:', button.parentElement);
+                console.log('🔄 Button styles:', window.getComputedStyle(button));
+                
+                this.setLanguage(newLang);
+            });
+            
+            // Also add a mouseenter event to test if the button is interactive
+            button.addEventListener('mouseenter', () => {
+                console.log('🔄 Mouse entered language button');
+            });
+            
+            switcher.appendChild(button);
 
-        // Insert the switcher in the appropriate location
-        this.insertLanguageSwitcher(switcher);
-        
-        // Debug: log that the switcher was created
-        console.log('Language switcher created:', switcher);
+            // Insert the switcher in the appropriate location
+            this.insertLanguageSwitcher(switcher);
+            
+            // Force the switcher to be visible with inline styles
+            switcher.style.position = 'fixed';
+            switcher.style.top = '20px';
+            switcher.style.right = '20px';
+            switcher.style.zIndex = '9999';
+            switcher.style.display = 'block';
+            switcher.style.visibility = 'visible';
+            switcher.style.pointerEvents = 'auto';
+            switcher.style.cursor = 'pointer';
+            
+            console.log('✅ Language switcher created successfully');
+            console.log('✅ Button event listener attached');
+        } catch (error) {
+            console.error('❌ Error creating language switcher:', error);
+        }
     }
 
     insertLanguageSwitcher(switcher) {
-        // Always insert at the very top of the body for fixed positioning
-        document.body.insertBefore(switcher, document.body.firstChild);
+        try {
+            // Check if document.body exists and has children
+            if (!document.body) {
+                console.warn('⚠️ Document body not available');
+                return;
+            }
+
+            // Always insert at the very top of the body for fixed positioning
+            if (document.body.firstChild) {
+                document.body.insertBefore(switcher, document.body.firstChild);
+            } else {
+                document.body.appendChild(switcher);
+            }
+            
+            // Ensure it's visible
+            setTimeout(() => {
+                if (switcher.parentElement) {
+                    switcher.style.display = 'block';
+                    switcher.style.visibility = 'visible';
+                    console.log('✅ Language switcher made visible');
+                }
+            }, 100);
+            
+            console.log('✅ Language switcher inserted successfully');
+        } catch (error) {
+            console.error('❌ Error inserting language switcher:', error);
+        }
     }
 
     updateLanguageSwitcher() {
-        this.createLanguageSwitcher();
+        try {
+            this.createLanguageSwitcher();
+        } catch (error) {
+            console.error('❌ Error updating language switcher:', error);
+        }
     }
 }
 
-// Initialize language manager
-const languageManager = new LanguageManager();
 
-// Export for use in other scripts
-window.languageManager = languageManager;
 
-// Debug: log that the language manager was initialized
-console.log('Language manager initialized:', languageManager);
-console.log('Current language:', languageManager.getCurrentLanguage()); 
+// Initialize language manager with error handling
+let languageManager;
+
+function initializeLanguageManager() {
+    try {
+        languageManager = new LanguageManager();
+        // Export for use in other scripts
+        window.languageManager = languageManager;
+        console.log('✅ Language manager initialized and exported to window');
+        
+        // Retry creating language switcher after a short delay
+        setTimeout(() => {
+            if (languageManager && !document.getElementById('languageSwitcher')) {
+                console.log('🔄 Retrying language switcher creation...');
+                languageManager.createLanguageSwitcher();
+            }
+        }, 500);
+        
+    } catch (error) {
+        console.error('❌ Failed to initialize language manager:', error);
+        // Create a fallback language manager
+        window.languageManager = {
+            getText: (key) => key,
+            setLanguage: () => {},
+            getCurrentLanguage: () => 'en',
+            updateLanguage: () => {},
+            createLanguageSwitcher: () => {},
+            initialized: false
+        };
+    }
+}
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeLanguageManager);
+} else {
+    initializeLanguageManager();
+}
+
+// Also try to initialize on window load as a backup
+window.addEventListener('load', () => {
+    if (!window.languageManager || !window.languageManager.initialized) {
+        console.log('🔄 Retrying language manager initialization on window load...');
+        initializeLanguageManager();
+    }
+});
+
+// Test function for debugging
+window.testLanguageSwitcher = function() {
+    console.log('🧪 Testing language switcher...');
+    console.log('🧪 window.languageManager:', window.languageManager);
+    console.log('🧪 Current language:', window.languageManager?.getCurrentLanguage());
+    
+    const switcher = document.getElementById('languageSwitcher');
+    console.log('🧪 Language switcher element:', switcher);
+    
+    const button = document.getElementById('languageSwitchBtn');
+    console.log('🧪 Language button element:', button);
+    
+    if (button) {
+        console.log('🧪 Button clickable:', button.click);
+        console.log('🧪 Button styles:', window.getComputedStyle(button));
+        console.log('🧪 Button parent styles:', window.getComputedStyle(button.parentElement));
+    }
+    
+    // Try to trigger a click programmatically
+    if (button) {
+        console.log('🧪 Triggering click programmatically...');
+        button.click();
+    }
+}; 

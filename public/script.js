@@ -2,6 +2,14 @@
 let currentMood = '';
 let currentRecipe = null;
 
+// Safe language manager access with fallbacks
+function getText(key, fallback = key) {
+    if (window.languageManager && typeof window.languageManager.getText === 'function') {
+        return window.languageManager.getText(key);
+    }
+    return fallback;
+}
+
 // DOM elements
 const moodSelection = document.getElementById('moodSelection');
 const loading = document.getElementById('loading');
@@ -37,44 +45,52 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Add click listeners to action buttons
-    newRecipeBtn.addEventListener('click', () => {
-        if (currentMood) {
-            getRecipe(currentMood);
-        }
-    });
+    if (newRecipeBtn) {
+        newRecipeBtn.addEventListener('click', () => {
+            if (currentMood) {
+                getRecipe(currentMood);
+            }
+        });
+    }
 
-    backToMoodBtn.addEventListener('click', () => {
-        showMoodSelection();
-    });
-
-    retryBtn.addEventListener('click', () => {
-        if (currentMood) {
-            getRecipe(currentMood);
-        } else {
+    if (backToMoodBtn) {
+        backToMoodBtn.addEventListener('click', () => {
             showMoodSelection();
-        }
-    });
+        });
+    }
+
+    if (retryBtn) {
+        retryBtn.addEventListener('click', () => {
+            if (currentMood) {
+                getRecipe(currentMood);
+            } else {
+                showMoodSelection();
+            }
+        });
+    }
 
     // Logout button
-    logoutBtn.addEventListener('click', async () => {
-        try {
-            const response = await fetch('/api/logout', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                const response = await fetch('/api/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
 
-            if (response.ok) {
-                window.location.href = '/login';
-            } else {
-                alert(languageManager.getText('notifications.logoutFailed'));
+                if (response.ok) {
+                    window.location.href = '/login';
+                } else {
+                    alert(getText('notifications.logoutFailed', 'Logout failed'));
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                alert(getText('notifications.logoutFailed', 'Logout failed'));
             }
-        } catch (error) {
-            console.error('Logout error:', error);
-            alert(languageManager.getText('notifications.logoutFailed'));
-        }
-    });
+        });
+    }
 
     // Load user info on page load
     loadUserInfo();
@@ -85,14 +101,19 @@ async function loadUserInfo() {
     try {
         const response = await fetch('/api/user');
         if (response.ok) {
-                    const data = await response.json();
-        userInfo.textContent = `${languageManager.getText('main.welcome')}, ${data.user.username}!`;
-        } else {
+            const data = await response.json();
+            if (userInfo) {
+                userInfo.textContent = `${getText('main.welcome', 'Welcome')}, ${data.user.username}!`;
+            }
+        } else if (response.status === 401) {
             // If not authenticated, redirect to login
             window.location.href = '/login';
+        } else {
+            console.log('Error loading user info:', response.status);
         }
     } catch (error) {
         console.error('Error loading user info:', error);
+        // On network error, redirect to login
         window.location.href = '/login';
     }
 }
@@ -237,3 +258,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }, index * 100);
     });
 }); 
+
+// Function to refresh current recipe with new language
+async function refreshCurrentRecipe() {
+    if (currentMood && currentRecipe) {
+        try {
+            const response = await fetch(`/api/recipes/${currentMood}`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const recipe = await response.json();
+            currentRecipe = recipe;
+            displayRecipe(recipe);
+            console.log('✅ Recipe refreshed with new language');
+            
+        } catch (error) {
+            console.error('Error refreshing recipe:', error);
+        }
+    }
+}
+
+// Listen for language changes
+window.addEventListener('languageChanged', refreshCurrentRecipe); 

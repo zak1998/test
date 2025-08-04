@@ -10,10 +10,14 @@
     <style>
         /* Language Switcher Styles */
         .language-switcher {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
+            position: fixed !important;
+            top: 20px !important;
+            right: 20px !important;
+            z-index: 9999 !important;
+            background: rgba(255, 255, 255, 0.9) !important;
+            border-radius: 25px !important;
+            padding: 8px 16px !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
         }
         
         .language-btn {
@@ -77,12 +81,12 @@
                 <i class="fas fa-heart text-pink-500 mr-3"></i>
                 <span data-translate="main.title">Mood Recipe Finder</span>
             </h1>
-            <p class="text-xl text-gray-600" data-translate="main.subtitle">Tell us how you're feeling and we'll find the perfect recipe for you!</p>
+            <p class="text-xl text-gray-600" data-translate="main.subtitle">Découvrez la recette parfaite pour votre humeur</p>
         </div>
 
         <!-- Mood Selection -->
         <div id="moodSelection" class="max-w-4xl mx-auto mb-12">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center" data-translate="main.selectMood">How are you feeling today?</h2>
+            <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center" data-translate="main.selectMood">Sélectionnez votre humeur</h2>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <button class="mood-btn bg-blue-500 hover:bg-blue-600" data-mood="happy">
                     <i class="fas fa-smile text-2xl mb-2"></i>
@@ -122,7 +126,7 @@
         <!-- Loading State -->
         <div id="loading" class="hidden max-w-2xl mx-auto text-center">
             <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-pink-500 mx-auto mb-4"></div>
-            <p class="text-gray-600 text-lg" data-translate="main.loading">Finding the perfect recipe for your mood...</p>
+            <p class="text-gray-600 text-lg" data-translate="main.loading">Chargement...</p>
         </div>
 
         <!-- Recipe Display -->
@@ -161,11 +165,11 @@
             <div class="flex justify-center gap-4">
                 <button id="newRecipeBtn" class="bg-pink-500 hover:bg-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-300 flex items-center">
                     <i class="fas fa-random mr-2"></i>
-                    Get Another Recipe
+                    <span data-translate="main.newRecipe">Nouvelle recette</span>
                 </button>
                 <button id="backToMoodBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-300 flex items-center">
                     <i class="fas fa-arrow-left mr-2"></i>
-                    Choose Different Mood
+                    <span data-translate="main.backToMoods">Retour aux humeurs</span>
                 </button>
             </div>
         </div>
@@ -174,10 +178,10 @@
         <div id="errorDisplay" class="hidden max-w-2xl mx-auto text-center">
             <div class="bg-red-50 border border-red-200 rounded-lg p-6">
                 <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>
-                <h3 class="text-xl font-semibold text-red-800 mb-2">Oops! Something went wrong</h3>
+                <h3 class="text-xl font-semibold text-red-800 mb-2" data-translate="main.error">Erreur</h3>
                 <p id="errorMessage" class="text-red-600 mb-4"></p>
                 <button id="retryBtn" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300">
-                    Try Again
+                    <span data-translate="main.retry">Réessayer</span>
                 </button>
             </div>
         </div>
